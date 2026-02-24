@@ -68,7 +68,8 @@ echo "VITE_API_BASE_URL=http://localhost:8000/api" > .env
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`.
+The Local frontend URL will be available at `http://localhost:5173`.
+The Live frontend URL will be available at `https://subscription-management-system.netlify.app/`.
 
 ---
 
