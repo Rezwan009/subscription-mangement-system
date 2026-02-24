@@ -10,6 +10,7 @@ A robust and modern Subscription Management System built with **Laravel** and **
 - **Background Emails**: Queued email notifications for subscription confirmations.
 - **Atomic Transactions**: Robust database handling to ensure data integrity.
 - **Plan Awareness**: Dynamic modal that recognizes and highlights current subscriptions.
+- **Role Based Access**: Admin user can add, update, delete vendors and plans. Normal User can view vendors and plans.
 
 ---
 
