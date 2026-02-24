@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -13,9 +14,11 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(email, password);
+      toast.success('Logged in successfully!');
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to login');
+      toast.error(err.response?.data?.message || 'Failed to login');
     }
   };
 
@@ -23,7 +26,6 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <h2 className="text-2xl font-bold mb-6 text-center text-blue-600">Login</h2>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>

@@ -49,4 +49,23 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Check if the user has an active premium subscription.
+     */
+    public function isPremium()
+    {
+        return $this->subscriptions()
+            ->where('status', 'active')
+            ->whereHas('plan', function ($query) {
+                $query->where('name', 'like', '%Premium%');
+            })
+            ->where('end_date', '>', now())
+            ->exists();
+    }
 }
