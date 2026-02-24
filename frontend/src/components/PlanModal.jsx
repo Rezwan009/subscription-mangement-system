@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getPlans, purchasePlan } from '../services/planService';
+import { getPlans, purchasePlan, getMySubscriptions } from '../services/planService';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,19 +8,35 @@ const PlanModal = ({ vendor, onClose }) => {
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState(null);
+    const [activePlanId, setActivePlanId] = useState(null);
     const { user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchPlans();
-    }, [vendor.id]);
+        fetchData();
+    }, [vendor.id, user]);
 
-    const fetchPlans = async () => {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            const response = await getPlans({ vendor_id: vendor.id });
-            setPlans(response.data);
+            const [plansRes, subsRes] = await Promise.all([
+                getPlans({ vendor_id: vendor.id }),
+                user ? getMySubscriptions() : Promise.resolve({ data: [] })
+            ]);
+            
+            setPlans(plansRes.data);
+            
+            // Find if user has an active plan for THIS vendor
+            if (user && subsRes.data) {
+                const activeSub = subsRes.data.find(sub => 
+                    sub.plan.vendor_id === vendor.id && sub.status === 'active'
+                );
+                if (activeSub) {
+                    setActivePlanId(activeSub.plan_id);
+                }
+            }
         } catch (err) {
-            console.error('Failed to fetch plans');
+            console.error('Failed to fetch modal data', err);
         } finally {
             setLoading(false);
         }
@@ -32,12 +48,15 @@ const PlanModal = ({ vendor, onClose }) => {
             return;
         }
 
+        if (planId === activePlanId) return;
+
         setPurchasing(planId);
         try {
             const response = await purchasePlan(planId);
             toast.success(response.data.message || 'Plan purchased successfully!');
             onClose();
-            navigate('/dashboard'); // Or my-subscriptions
+            // Refresh dashboard or subscriptions to show new state
+            navigate('/dashboard');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to purchase plan');
         } finally {
@@ -74,48 +93,60 @@ const PlanModal = ({ vendor, onClose }) => {
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-10 text-gray-500 dark:text-gray-400">Loading plans...</div>
+                        <div className="text-center py-20 text-indigo-600 font-bold italic animate-pulse">Personalizing your options...</div>
                     ) : (
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {plans.map((plan) => (
-                                <div 
-                                    key={plan.id} 
-                                    className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 ${
-                                        plan.name.toLowerCase().includes('premium')
-                                        ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10 shadow-indigo-100 dark:shadow-none shadow-lg' 
-                                        : 'border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800'
-                                    }`}
-                                >
-                                    <div className="mb-8">
-                                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{plan.name}</h4>
-                                        <div className="flex items-baseline">
-                                            <span className="text-3xl font-black text-gray-900 dark:text-white">${plan.price}</span>
-                                            <span className="ml-1 text-gray-500 dark:text-gray-400">/mo</span>
-                                        </div>
-                                    </div>
-
-                                    <ul className="mb-8 space-y-4 flex-1">
-                                        {plan.features.map((feature, idx) => (
-                                            <li key={idx} className="flex items-start text-sm text-gray-600 dark:text-gray-300">
-                                                <svg className="h-5 w-5 text-indigo-500 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                {feature}
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                    <button
-                                        onClick={() => handlePurchase(plan.id)}
-                                        disabled={purchasing === plan.id}
-                                        className={`mt-8 w-full py-3 px-6 rounded-md shadow-sm text-sm font-semibold text-white transition-opacity ${
-                                            purchasing === plan.id ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'
+                            {plans.map((plan) => {
+                                const isActive = plan.id === activePlanId;
+                                return (
+                                    <div 
+                                        key={plan.id} 
+                                        className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 group ${
+                                            isActive
+                                            ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10 ring-4 ring-indigo-500/10' 
+                                            : 'border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-500/50'
                                         }`}
                                     >
-                                        {purchasing === plan.id ? 'Processing...' : 'Purchase Plan'}
-                                    </button>
-                                </div>
-                            ))}
+                                        {isActive && (
+                                            <span className="absolute top-0 right-0 -tr-2 -mr-2 bg-indigo-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg">
+                                                Current
+                                            </span>
+                                        )}
+                                        <div className="mb-8">
+                                            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{plan.name}</h4>
+                                            <div className="flex items-baseline">
+                                                <span className="text-3xl font-black text-gray-900 dark:text-white">${plan.price}</span>
+                                                <span className="ml-1 text-gray-500 dark:text-gray-400">/mo</span>
+                                            </div>
+                                        </div>
+
+                                        <ul className="mb-8 space-y-4 flex-1">
+                                            {plan.features.map((feature, idx) => (
+                                                <li key={idx} className="flex items-start text-sm text-gray-600 dark:text-gray-300">
+                                                    <svg className={`h-5 w-5 mr-2 shrink-0 ${isActive ? 'text-indigo-600' : 'text-indigo-400 group-hover:text-indigo-500'} transition-colors`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <button
+                                            onClick={() => handlePurchase(plan.id)}
+                                            disabled={purchasing === plan.id || isActive}
+                                            className={`mt-8 w-full py-3 px-6 rounded-xl shadow-lg border-2 text-sm font-black transition-all ${
+                                                isActive
+                                                ? 'bg-transparent border-indigo-600 text-indigo-600 cursor-default opacity-100'
+                                                : purchasing === plan.id 
+                                                    ? 'bg-gray-400 border-gray-400 text-white animate-pulse' 
+                                                    : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98]'
+                                            }`}
+                                        >
+                                            {isActive ? 'Current Plan' : (purchasing === plan.id ? 'Processing...' : (activePlanId ? 'Change Plan' : 'Get Started'))}
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
 
