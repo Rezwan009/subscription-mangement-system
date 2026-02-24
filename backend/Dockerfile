@@ -27,5 +27,5 @@ EXPOSE 8080
 # Start queue worker and php-fpm (no artisan serve)
 CMD php artisan migrate --force && \
   php artisan db:seed --force && \
-  php artisan queue:work --sleep=3 --tries=3 --timeout=90 --max-time=3600 & \
-  php-fpm
+  php artisan serve --host=0.0.0.0 --port=8080 & \
+  php artisan queue:work --sleep=3 --tries=3 --timeout=90 --max-time=3600
