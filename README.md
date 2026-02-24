@@ -61,6 +61,9 @@ cd frontend
 # Install dependencies
 npm install
 
+# Create environment file
+echo "VITE_API_BASE_URL=http://localhost:8000/api" > .env
+
 # Start the development server
 npm run dev
 ```
