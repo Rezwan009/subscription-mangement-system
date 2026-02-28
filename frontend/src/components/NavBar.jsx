@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const NavBar = ({ darkMode, setDarkMode }) => { 
+const NavBar = ({ darkMode, setDarkMode }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -33,15 +33,15 @@ const NavBar = ({ darkMode, setDarkMode }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center font-bold text-indigo-600 dark:text-indigo-400 text-xl">
-              SubSys
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <img src="/logo.png" alt="Logo" className="h-30 w-40 md:h-40 md:w-auto sm:ml-[-40px] ml-[-20px]" />
             </Link>
             <div className="hidden md:ml-8 md:flex md:space-x-4">
               {navLinks.filter(link => link.show).map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:border-b-2 hover:border-indigo-600 dark:hover:border-indigo-400"
                 >
                   {link.name}
                 </Link>
@@ -169,7 +169,7 @@ const NavBar = ({ darkMode, setDarkMode }) => {
                 <Link
                   to="/register"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block py-2 text-base font-medium text-indigo-600 font-bold"
+                  className="block py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-indigo-600"
                 >
                   Register
                 </Link>
